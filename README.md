@@ -18,6 +18,8 @@ If target plugin is not found, the command will return a `CommandResult` with st
 
 If target plugin hotloads or unloads, the `PluginProxy` will automatically update the reference.
 
+If you missing `[Mixin]` or `[TypeIdFilter("Id")]` attribute on the `PluginProxy` field, you will get a error when calling the command. And you will see an error log about missing attribute.
+
 ```csharp
 [AssetType(Id="WhateverMod")]
 public class MyMod : Asset

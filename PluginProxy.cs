@@ -13,6 +13,7 @@
 
   0. You just DO WHAT THE FUCK YOU WANT TO.
 */
+using UnityEngine;
 using Warudo.Core;
 using Warudo.Core.Data;
 using Warudo.Core.Events;
@@ -45,7 +46,7 @@ namespace WarudoKnife.LiYin
 {
     public class PluginProxy : BehavioralMixin
     {
-        Plugin plugin = null;
+        Plugin targetPlugin = null;
         public override void OnCreate()
         {
             var meta = GetMixinMeta();
@@ -56,23 +57,38 @@ namespace WarudoKnife.LiYin
                 {
                     if (e.Plugin.GetTypeMeta().Id == typeId)
                     {
-                        plugin = e.Plugin;
+                        targetPlugin = e.Plugin;
                     }
                 }, true);
                 Owner.Subscribe<PluginDisableEvent>((e) =>
                 {
                     if (e.Plugin.GetTypeMeta().Id == typeId)
                     {
-                        plugin = null;
+                        targetPlugin = null;
                     }
                 }, true);
-                plugin = Context.PluginManager.GetPlugin(typeId);
+                targetPlugin = Context.PluginManager.GetPlugin(typeId);
+            } 
+            else
+            {
+                Debug.LogError("PluginProxy missing [TypeIdFilter(\"Id\")] on it.");
             }
         }
+        public Plugin GetTargetPlugin() => targetPlugin;
+    }
 
-        public CommandResult<TResult> CallCommand<TArgs, TResult>(string commandName, TArgs args) where TArgs : class, new ()
+    public static class  PluginProxyExtensions
+    {
+        public static CommandResult<TResult> CallCommand<TArgs, TResult>(this PluginProxy proxy, string commandName, TArgs args) where TArgs : class, new()
         {
-            return plugin.CallCommand<TArgs, TResult>(commandName, args);
+            if (proxy == null)
+            {
+                Debug.LogError("PluginProxy missing [Mixin] on it.");
+                CommandResult<TResult> commandResult = new CommandResult<TResult>();
+                commandResult.Status = CommandResultStatus.EXECUTION_ERROR;
+                return commandResult;
+            }
+            return proxy.GetTargetPlugin().CallCommand<TArgs, TResult>(commandName, args);
         }
     }
 
